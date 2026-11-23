@@ -1,0 +1,365 @@
+QWidget {
+  color: @text;
+  font-family: "Segoe UI", Arial, sans-serif;
+  font-size: 10pt;
+}
+
+QMainWindow, QWidget#mainSurface {
+  background: @window;
+}
+
+QSplitter::handle {
+  background: @line;
+}
+
+QSplitter::handle:horizontal {
+  width: 1px;
+}
+
+QSplitter::handle:vertical {
+  height: 1px;
+}
+
+QStatusBar {
+  background: @surface_alt;
+  border-top: 1px solid @line;
+  color: @muted;
+  padding: 4px 10px;
+}
+
+QWidget#appHeader {
+  background: @surfaceElevated;
+  border-bottom: 1px solid @shadowBorder;
+  min-height: 64px;
+  max-height: 64px;
+}
+
+QLabel#brandTitle {
+  color: @text;
+  font-size: 11pt;
+  font-weight: 700;
+}
+
+QLabel#brandSubtitle {
+  color: @muted;
+  font-size: 8.5pt;
+}
+
+QFrame#metricPill {
+  background: @surface;
+  border: 1px solid @line;
+  border-radius: 8px;
+  min-height: 42px;
+  max-height: 42px;
+}
+
+QLabel#metricValue {
+  color: @text;
+  font-weight: 700;
+  font-size: 9.5pt;
+}
+
+QLabel#metricLabel {
+  color: @muted;
+  font-size: 8pt;
+}
+
+QLineEdit#headerSearch {
+  background: @field_alt;
+  border-radius: 8px;
+  padding-left: 12px;
+  min-height: 34px;
+  max-height: 34px;
+}
+
+QLabel#toast {
+  background: @surfaceElevated;
+  color: @text;
+  border: 1px solid @shadowBorder;
+  border-radius: 8px;
+  padding: 9px 16px;
+  font-weight: 600;
+}
+
+QFrame#dropOverlay {
+  background: rgba(79, 141, 247, 42);
+  border: 2px dashed @accent;
+  border-radius: 14px;
+  margin: 16px;
+}
+
+QLabel#dropOverlayLabel {
+  color: @accent_text;
+  font-size: 14pt;
+  font-weight: 700;
+}
+
+QToolBar#mainToolbar {
+  background: @surfaceElevated;
+  border: 0;
+  border-bottom: 1px solid @line;
+  spacing: 6px;
+  padding: 8px 10px;
+}
+
+QToolBar#mainToolbar::separator {
+  background: @line;
+  width: 1px;
+  margin: 4px 8px;
+}
+
+QToolButton, QPushButton {
+  min-height: 28px;
+  padding: 6px 11px;
+  border: 1px solid @button_border;
+  border-radius: 7px;
+  background: @surface;
+  color: @text;
+}
+
+QToolButton:hover, QPushButton:hover {
+  background: @hover;
+  border-color: @accent_border;
+}
+
+QToolButton:pressed, QPushButton:pressed {
+  background: @pressed;
+  border-color: @accent;
+}
+
+QLineEdit, QSpinBox, QComboBox {
+  min-height: 30px;
+  padding: 5px 9px;
+  border: 1px solid @button_border;
+  border-radius: 6px;
+  background: @field;
+  color: @text;
+  selection-background-color: @selection;
+}
+
+QCheckBox {
+  spacing: 8px;
+  min-height: 24px;
+}
+
+QCheckBox::indicator {
+  width: 16px;
+  height: 16px;
+  border: 1px solid @button_border;
+  border-radius: 4px;
+  background: @field;
+}
+
+QCheckBox::indicator:hover {
+  border-color: @accent;
+}
+
+QCheckBox::indicator:checked {
+  background: @accent;
+  border-color: @accent;
+}
+
+QCheckBox::indicator:checked:disabled {
+  background: @muted;
+}
+
+QLineEdit:focus, QSpinBox:focus, QComboBox:focus {
+  border-color: @accent;
+}
+
+QLineEdit#toolbarSearch {
+  background: @field_alt;
+  padding-left: 12px;
+}
+
+QListWidget#sidebar {
+  background: @surfaceElevated;
+  border: 0;
+  border-right: 1px solid @line;
+  padding: 8px;
+  outline: 0;
+}
+
+QListWidget#settingsNav {
+  background: @surfaceElevated;
+  border: 1px solid @line;
+  border-radius: 8px;
+  padding: 6px;
+  outline: 0;
+}
+
+QListWidget#settingsNav::item {
+  min-height: 34px;
+  padding: 7px 10px;
+  border-radius: 7px;
+  color: @muted;
+}
+
+QListWidget#settingsNav::item:hover {
+  background: @hover;
+  color: @text;
+}
+
+QListWidget#settingsNav::item:selected {
+  background: @accent_soft;
+  color: @accent_text;
+  font-weight: 600;
+}
+
+QListWidget#sidebar::item {
+  min-height: 34px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  color: @muted;
+}
+
+QListWidget#sidebar::item:hover {
+  background: @hover;
+  color: @text;
+}
+
+QListWidget#sidebar::item:selected {
+  background: @accent_soft;
+  color: @accent_text;
+  font-weight: 600;
+}
+
+QTableWidget#torrentTable, QTreeWidget, QListWidget, QPlainTextEdit {
+  background: @surface;
+  color: @text;
+  border: 1px solid @line;
+  border-radius: 8px;
+  gridline-color: @line_soft;
+  selection-background-color: @selection;
+  selection-color: @text;
+  alternate-background-color: @surface_alt;
+}
+
+QTableWidget#torrentTable::item, QTreeWidget::item {
+  padding: 6px;
+}
+
+QTableWidget#torrentTable::item:hover, QTreeWidget::item:hover {
+  background: @hover;
+}
+
+QHeaderView::section {
+  background: @surfaceElevated;
+  color: @muted;
+  font-weight: 600;
+  padding: 8px;
+  border: 0;
+  border-bottom: 1px solid @line;
+  border-right: 1px solid @line_soft;
+}
+
+QTabWidget#detailsPanel::pane {
+  border: 1px solid @line;
+  border-radius: 8px;
+  background: @surface;
+  top: -1px;
+}
+
+QScrollArea#detailsSummaryScroll, QWidget#detailsSummaryContent {
+  background: @surface;
+  border: 0;
+}
+
+QTabBar::tab {
+  background: @window;
+  color: @muted;
+  padding: 8px 14px;
+  border: 1px solid @line;
+  border-bottom: 0;
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  margin-right: 2px;
+}
+
+QLabel#detailsTitle {
+  color: @text;
+  font-size: 12pt;
+  font-weight: 700;
+}
+
+QLabel#detailsSubtitle {
+  color: @muted;
+  font-size: 8.5pt;
+}
+
+QLabel#summaryLabel {
+  color: @muted;
+  font-size: 8.5pt;
+}
+
+QLabel#summaryValue {
+  color: @text;
+  font-weight: 600;
+}
+
+QPlainTextEdit#detailsRawSummary {
+  background: @field_alt;
+  border: 1px solid @line_soft;
+  border-radius: 8px;
+  padding: 8px;
+}
+
+QTabBar::tab:selected {
+  background: @surface;
+  color: @text;
+  font-weight: 600;
+}
+
+QDialog {
+  background: @window;
+}
+
+QDialogButtonBox QPushButton {
+  min-width: 86px;
+}
+
+QMenu {
+  background: @surface;
+  color: @text;
+  border: 1px solid @line;
+  border-radius: 6px;
+  padding: 5px;
+}
+
+QMenu::item {
+  padding: 7px 22px;
+  border-radius: 4px;
+}
+
+QMenu::item:selected {
+  background: @selection;
+}
+
+QScrollBar:vertical, QScrollBar:horizontal {
+  background: @scroll_bg;
+  border: 0;
+  margin: 0;
+}
+
+QScrollBar:vertical {
+  width: 10px;
+}
+
+QScrollBar:horizontal {
+  height: 10px;
+}
+
+QScrollBar::handle {
+  background: @scroll_handle;
+  border-radius: 5px;
+  min-height: 24px;
+}
+
+QScrollBar::handle:hover {
+  background: @scroll_handle_hover;
+}
+
+QScrollBar::add-line, QScrollBar::sub-line {
+  width: 0;
+  height: 0;
+}

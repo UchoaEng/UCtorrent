@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>UCtorrent WebUI</title>
+    <link rel="icon" type="image/png" href="/static/assets/uctorrent-logo.png" />
+    <style>
+      :root { color-scheme: light dark; --bg: #f4f6f8; --panel: #ffffff; --ink: #172033; --muted: #64748b; --line: #d8dee9; --accent: #2563eb; }
+      body.dark { --bg: #111827; --panel: #1f2937; --ink: #f8fafc; --muted: #cbd5e1; --line: #334155; --accent: #60a5fa; }
+      * { box-sizing: border-box; }
+      body { margin: 0; font-family: Arial, sans-serif; background: var(--bg); color: var(--ink); }
+      header { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 18px; background: #1f2937; color: white; }
+      .brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; }
+      .brand img { width: 30px; height: 30px; object-fit: contain; }
+      main { padding: 16px; display: grid; gap: 14px; }
+      section { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 14px; }
+      input, select, button { padding: 8px 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); color: var(--ink); }
+      button { background: var(--accent); color: white; cursor: pointer; border-color: var(--accent); }
+      table { width: 100%; border-collapse: collapse; }
+      th, td { padding: 8px; border-bottom: 1px solid var(--line); text-align: left; font-size: 13px; }
+      th { cursor: pointer; user-select: none; }
+      .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+      .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+      .metric { border: 1px solid var(--line); border-radius: 6px; padding: 10px; }
+      .metric strong { display: block; font-size: 20px; margin-top: 4px; }
+      .muted { color: var(--muted); font-size: 12px; }
+      .split { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 14px; }
+      .details { max-height: 520px; overflow: auto; }
+      .bars { height: 72px; display: flex; align-items: end; gap: 2px; border: 1px solid var(--line); padding: 6px; }
+      .bars span { flex: 1; background: var(--accent); min-height: 2px; }
+      @media (max-width: 900px) { .split { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <header><span class="brand"><img src="/static/assets/uctorrent-logo.png" alt="" />UCtorrent</span><span id="connection">WebUI local</span></header>
+    <main>
+      <section>
+        <div class="row">
+          <input id="user" value="admin" placeholder="Usuario" />
+          <input id="pass" value="admin" placeholder="Senha" type="password" />
+          <button onclick="login()">Entrar</button>
+          <button onclick="toggleTheme()">Tema</button>
+        </div>
+        <p class="muted">Use UCtorrent apenas para conteudos legais ou autorizados.</p>
+      </section>
+      <section class="cards">
+        <div class="metric">Download<strong id="down">0 B/s</strong></div>
+        <div class="metric">Upload<strong id="up">0 B/s</strong></div>
+        <div class="metric">Ativos<strong id="active">0</strong></div>
+        <div class="metric">Torrents<strong id="total">0</strong></div>
+      </section>
+      <section>
+        <div class="bars" id="graph"></div>
+      </section>
+      <section>
+        <div class="row">
+          <input id="magnet" style="flex:1; min-width: 260px" placeholder="Cole um magnet link legal/autorizado" />
+          <button onclick="addMagnet()">Adicionar magnet</button>
+          <button onclick="batchAction('resume')">Iniciar selecionados</button>
+          <button onclick="batchAction('pause')">Pausar selecionados</button>
+          <button onclick="batchAction('remove')">Remover selecionados</button>
+          <input id="filterText" placeholder="Filtrar" oninput="render()" />
+          <select id="filterStatus" onchange="render()">
+            <option value="">Todos</option>
+            <option value="downloading">Baixando</option>
+            <option value="metadata">Metadados</option>
+            <option value="paused">Pausado</option>
+            <option value="seeding">Semeando</option>
+            <option value="offline">Offline</option>
+          </select>
+          <button onclick="loadTorrents()">Atualizar</button>
+        </div>
+      </section>
+      <div class="split">
+        <section>
+          <table>
+            <thead><tr><th><input type="checkbox" id="selectAll" onchange="toggleAll()" /></th><th onclick="sortBy('name')">Nome</th><th onclick="sortBy('status')">Status</th><th onclick="sortBy('progress')">Progresso</th><th onclick="sortBy('download_rate')">Download</th><th onclick="sortBy('upload_rate')">Upload</th><th>Acoes</th></tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </section>
+        <section class="details">
+          <h3 id="detailTitle">Detalhes</h3>
+          <div id="details" class="muted">Selecione um torrent.</div>
+        </section>
+      </div>
+    </main>
+    <script>
+      let token = localStorage.getItem("uctorrent_token") || "";
+      let torrents = [];
+      let selectedId = null;
+      let selectedIds = new Set();
+      let sortKey = "name";
+      let speedHistory = [];
+
+      function fmtBytes(value) {
+        value = Number(value || 0);
+        const units = ["B", "KB", "MB", "GB", "TB"];
+        let index = 0;
+        while (value >= 1024 && index < units.length - 1) { value /= 1024; index++; }
+        return `${value.toFixed(index ? 1 : 0)} ${units[index]}`;
+      }
+      function fmtSpeed(value) { return `${fmtBytes(value)}/s`; }
+      function escapeHtml(value) {
+        return String(value ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+      }
+      async function api(path, options = {}) {
+        options.headers = Object.assign({"Content-Type": "application/json"}, options.headers || {});
+        if (token) options.headers.Authorization = "Bearer " + token;
+        const res = await fetch(path, options);
+        if (!res.ok) throw new Error(await res.text());
+        return res.json();
+      }
+      async function login() {
+        const data = await api("/api/auth/login", {method: "POST", body: JSON.stringify({username: user.value, password: pass.value})});
+        token = data.token;
+        localStorage.setItem("uctorrent_token", token);
+        connectEvents();
+        loadTorrents();
+      }
+      async function loadTorrents() {
+        torrents = await api("/api/torrents");
+        render();
+      }
+      function render() {
+        const text = filterText.value.toLowerCase();
+        const status = filterStatus.value;
+        const visible = torrents.filter(t => (!status || t.status === status) && (!text || JSON.stringify(t).toLowerCase().includes(text))).sort((a, b) => String(a[sortKey] ?? "").localeCompare(String(b[sortKey] ?? "")));
+        rows.innerHTML = visible.map(t => `<tr onclick="showDetails(${t.id})"><td><input type="checkbox" ${selectedIds.has(t.id) ? "checked" : ""} onclick="event.stopPropagation(); toggleOne(${t.id}, this.checked)" /></td><td>${escapeHtml(t.name)}</td><td>${escapeHtml(t.status)}</td><td>${Math.round((t.progress || 0) * 100)}%</td><td>${fmtSpeed(t.download_rate)}</td><td>${fmtSpeed(t.upload_rate)}</td><td><button onclick="event.stopPropagation(); pauseTorrent(${t.id})">Pausar</button> <button onclick="event.stopPropagation(); resumeTorrent(${t.id})">Retomar</button></td></tr>`).join("");
+        const downRate = torrents.reduce((sum, t) => sum + Number(t.download_rate || 0), 0);
+        const upRate = torrents.reduce((sum, t) => sum + Number(t.upload_rate || 0), 0);
+        down.textContent = fmtSpeed(downRate);
+        up.textContent = fmtSpeed(upRate);
+        active.textContent = torrents.filter(t => ["downloading", "metadata", "seeding"].includes(t.status)).length;
+        total.textContent = torrents.length;
+        speedHistory.push(downRate + upRate);
+        speedHistory = speedHistory.slice(-48);
+        const max = Math.max(...speedHistory, 1);
+        graph.innerHTML = speedHistory.map(v => `<span style="height:${Math.max(2, Math.round((v / max) * 58))}px"></span>`).join("");
+      }
+      function sortBy(key) { sortKey = key; render(); }
+      function toggleOne(id, checked) {
+        if (checked) selectedIds.add(id); else selectedIds.delete(id);
+      }
+      function toggleAll() {
+        if (selectAll.checked) torrents.forEach(t => selectedIds.add(t.id)); else selectedIds.clear();
+        render();
+      }
+      async function showDetails(id) {
+        selectedId = id;
+        const t = await api(`/api/torrents/${id}`);
+        detailTitle.textContent = t.name || "Detalhes";
+        details.innerHTML = `<p>Status: ${escapeHtml(t.status)} | Progresso: ${Math.round((t.progress || 0) * 100)}% | Ratio: ${Number(t.ratio || 0).toFixed(2)}</p>
+          <p>Destino: ${escapeHtml(t.save_path || "")}</p>
+          <h4>Arquivos</h4>${table(["path","size","progress"], (t.files || []).map(f => ({path:f.path, size:fmtBytes(f.size), progress:Math.round((f.progress || 0)*100)+"%"})))}
+          <h4>Trackers</h4>${table(["url","status","seeds","peers"], t.trackers || [])}
+          <h4>Peers</h4>${table(["ip","client","progress"], t.peers_detail || [])}
+          <h4>Logs</h4><pre>${escapeHtml((t.logs || []).map(l => `${l.created_at} [${l.level}] ${l.message}`).join("\\n") || "Sem logs.")}</pre>`;
+      }
+      function table(cols, data) {
+        if (!data.length) return `<p class="muted">Sem dados.</p>`;
+        return `<table><thead><tr>${cols.map(c => `<th>${c}</th>`).join("")}</tr></thead><tbody>${data.map(row => `<tr>${cols.map(c => `<td>${escapeHtml(row[c])}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+      }
+      async function addMagnet() {
+        await api("/api/torrents/add-magnet", {method: "POST", body: JSON.stringify({magnet_uri: magnet.value})});
+        magnet.value = "";
+        loadTorrents();
+      }
+      async function pauseTorrent(id) { await api(`/api/torrents/${id}/pause`, {method: "POST"}); loadTorrents(); }
+      async function resumeTorrent(id) { await api(`/api/torrents/${id}/resume`, {method: "POST"}); loadTorrents(); }
+      async function batchAction(action) {
+        const ids = [...selectedIds];
+        if (!ids.length) return;
+        if (action === "remove" && !confirm(`Remover ${ids.length} torrent(s)?`)) return;
+        await api("/api/torrents/batch", {method: "POST", body: JSON.stringify({ids, action})});
+        selectedIds.clear();
+        loadTorrents();
+      }
+      function connectEvents() {
+        const scheme = location.protocol === "https:" ? "wss:" : "ws:";
+        const ws = new WebSocket(`${scheme}//${location.host}/api/events`);
+        ws.onopen = () => connection.textContent = "WebSocket conectado";
+        ws.onclose = () => { connection.textContent = "WebSocket desconectado"; setTimeout(connectEvents, 2000); };
+        ws.onmessage = () => loadTorrents().catch(() => {});
+      }
+      function toggleTheme() { document.body.classList.toggle("dark"); localStorage.setItem("uctorrent_theme", document.body.classList.contains("dark") ? "dark" : "light"); }
+      if (localStorage.getItem("uctorrent_theme") === "dark") document.body.classList.add("dark");
+      if (token) { connectEvents(); loadTorrents().catch(() => {}); }
+    </script>
+  </body>
+</html>
